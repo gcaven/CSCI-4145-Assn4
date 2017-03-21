@@ -1,0 +1,93 @@
+html {
+  background-color: #FDFDFD;
+  font-family: 'Garamond';
+  color: #2a2a2a;
+  padding: 20px;
+  font-size: 18px;
+}
+
+.horizontal-rule {
+  width: 400px;
+  height: 0px;
+  border-top: 1px solid #cacaca;
+}
+
+.form-group {
+  display: block;
+  position: relative;
+  padding: 10px 0 10px 0;
+}
+.form-group .label {
+  font-weight: bold;
+  margin-right: 10px;
+}
+
+.form-group input {
+  height: 25px;
+  font-size: 18px;
+  font-family: 'Garamond';
+}
+
+.form-group input:nth-child(2) {
+  position: absolute;
+  left: 100px;
+}
+.form-group input:nth-child(3) {
+  position: absolute;
+  left: 330px;
+}
+
+.form-group.push input:nth-child(2) {
+  position: absolute;
+  left: 150px;
+}
+.form-group.push input:nth-child(3) {
+  position: absolute;
+  left: 380px;
+}
+
+#application-review-div {
+  margin-top: 30px;
+}
+
+.info-well {
+  background-color: rgba(0,0,0,0.10);
+  border: 1px solid #2a2a2a;
+  padding: 10px 30px;
+  border-radius: 10px;
+}
+
+.info-well-title {
+ margin: 20px 0px;
+ font-weight: bold
+}
+
+#apply-btn, #login-btn, #register-btn, button {
+  font-size: 18px;
+  margin-top: 20px;
+  padding: 5px 30px;
+  font-family: 'Garamond';
+  background-color: #2a2a2a;
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: background-color 200ms;
+  border-radius: 5px;
+}
+
+#apply-btn:hover, #login-btn:hover, #register-btn:hover, button:hover {
+  background-color: #5a5a5a;
+}
+
+#errors-list li {
+  color: red;
+}
+
+.errors {
+  color: red;
+}
+
+a {
+  display: block;
+  margin-bottom: 5px;
+}

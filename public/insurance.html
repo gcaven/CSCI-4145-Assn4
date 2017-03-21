@@ -1,0 +1,263 @@
+<html>
+  <head>
+    <link rel="stylesheet" type="text/css" href="app.css">
+  </head>
+  <body>
+    <h1>Insurance Portal</h1>
+
+    <!-- Logged in -->
+    <div id='loggedIn-pane' style='display: none'>
+      <h3 id='welcome-header'></h3>
+      <button id='transfer-btn' style='display: block'>Authorize Information Transfer</button>
+      <button id='logout-btn' style='display: block; background-color: red'>Logout</button>
+    </div>
+
+    <!-- Transfer Info to Mortgage -->
+    <div id='transfer-pane' style='display: none'>
+      <h3>Transfer to Mortgage Broker</h3>
+      <p>Enter the mortgage ID for the relevant application in the field below.</p>
+
+      <div class="form-group push">
+        <span class='label'>Application ID:</span>
+        <input type="text" name='transfer-id' id='transfer-id'>
+      </div>
+
+      <h3 style="margin-top: 40px">Transferrable Information</h3>
+      <p>The following information will be transferred to the mortgage broker upon your agreement:</p>
+
+      <div id='insurance-info-display-panel'>
+
+      </div>
+
+      <button id='disagree-btn' style='background-color: red'>Disagree</button>
+      <button id='agree-btn' style='background-color: green'>Agree</button>
+    </div>
+
+    <!-- Login / Registration -->
+    <div id='login-registration-pane' style='display: none'>
+      <h3>You are not logged in. Login below</h3>
+      <form id='login-form'>
+        <div class='form-group push'>
+          <span class='label'>Policy #:</span>
+          <input type='text' id='login-employee-policy-num'/>
+        </div>
+        <div class='form-group push'>
+          <span class='label'>Password:</span>
+          <input type='password' id='login-employee-password'/>
+        </div>
+        <div id='login-errors' class='errors'></div>
+        <input type='submit' id='login-btn' value='Login'/>
+      </form>
+      <div class='horizontal-rule'/>
+      <p>Don't have an account? Register below.</p>
+      <form id='register-form'>
+        <div class='form-group push'>
+          <span class='label'>Policy #:</span>
+          <input type='text' id='register-insurance-policy-num'/>
+        </div>
+        <div class='form-group push'>
+          <span class='label'>Password:</span>
+          <input type='password' id='register-insurance-password'/>
+        </div>
+        <div class='form-group push'>
+          <span class='label'>Confirm Password:</span>
+          <input type='password' id='register-insurance-password-confirm'/>
+        </div>
+        <p>Policy Information (Required):</p>
+        <div class='form-group push'>
+          <span class='label'>Name:</span>
+          <input type='text' id='register-insurance-lastname' placeholder="Surname"/>
+          <input type='text' id='register-insurance-firstname' placeholder="Given Name"/>
+        </div>
+        <div class='form-group push'>
+          <span class='label'>Policy Value:</span>
+          <input type='number' id='register-insurance-value'/>
+        </div>
+        <div id='register-errors' class='errors'></div>
+        <input type='submit' id='register-btn' value='Register'/>
+      </form>
+    </div>
+  </body>
+
+  <script src="https://code.jquery.com/jquery-3.1.1.min.js" integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8=" crossorigin="anonymous"></script>
+  <script>
+    $(document).ready(function() {
+
+      var checkLogin = function() {
+        $.ajax({
+          type: "GET",
+          url: '/insurance/check_login',
+          success: function(data) {
+            console.log(data);
+            if (data.loggedIn == true) {
+              $('#loggedIn-pane').show();
+              $('#login-registration-pane').hide();
+              $('#welcome-header').text('Welcome Back, ' + data.firstname + ' (Policy #' + data.policyNum + ')');
+              $('#insurance-info-display-panel').empty();
+              for (key in data) {
+                if (key != 'loggedIn' && key != '_id') {
+                  $('#insurance-info-display-panel').append('<p><strong>' + key + ': </strong>' + data[key] + '</p>');
+                }
+              }
+            } else {
+              $('#login-registration-pane').show();
+            }
+           },
+          error: function(err) {
+            alert(JSON.stringify(err));
+          }
+        });
+      }
+
+      checkLogin();
+
+      $('#logout-btn').on('click', function(e) {
+        e.preventDefault();
+        $.ajax({
+          type: "GET",
+          url: '/insurance/logout',
+          success: function(data) {
+            console.log(data);
+            if (data.error) {
+              alert(error);
+            } else {
+              $('#loggedIn-pane').hide();
+              $('#welcome-header').text('');
+              $('#login-registration-pane').show();
+            }
+           },
+          error: function(err) {
+            alert(JSON.stringify(err));
+          }
+        });
+      });
+
+      $('#transfer-btn').on('click', function(e) {
+        e.preventDefault();
+        $('#loggedIn-pane').hide();
+        $('#transfer-pane').show();
+      });
+
+      $('#disagree-btn').on('click', function(e) {
+        e.preventDefault();
+        $('#loggedIn-pane').show();
+        $('#transfer-pane').hide();
+      });
+
+      $('#agree-btn').on('click', function(e) {
+        e.preventDefault();
+        var _id = $('#transfer-id').val();
+        if (_id == '') {
+          return;
+        }
+        $.ajax({
+          type: "POST",
+          url: '/insurance/transfer_to_mortgage',
+          data: JSON.stringify({
+            'appID' : _id
+          }),
+          contentType: "application/json; charset=utf-8",
+          dataType: "json",
+          success: function(data) {
+            console.log(data);
+            if (data.error) {
+              alert(data.error);
+            } else {
+              $('#transfer-id').val('');
+              $('#loggedIn-pane').show();
+              $('#transfer-pane').hide();
+              alert('Data transferred successfully. Review your application on the mortgage broker\'s website to ensure the data transferred correctly.');
+            }
+          },
+          error: function(err) {
+            alert(JSON.stringify(err));
+          }
+        });
+      });
+
+      $('#login-form').on('submit', function(e) {
+        e.preventDefault();
+        $('#login-errors').empty();
+        var policyNum = $('#login-employee-policy-num').val();
+        var pass = $('#login-employee-password').val();
+        if (policyNum == '' || pass == '') {
+          $('#login-errors').append('<p>All fields must be completed.</p>');
+          return;
+        }
+        $.ajax({
+          type: "POST",
+          url: '/insurance/login',
+          data: JSON.stringify({
+            'policyNum': policyNum,
+            'password': pass
+          }),
+          contentType: "application/json; charset=utf-8",
+          dataType: "json",
+          success: function(data) {
+            console.log(data);
+            if (data.error) {
+              $('#login-errors').append('<p>' + data.error + '</p>');
+            } else {
+              $('#login-employee-id').val('');
+              $('#login-employee-password').val('');
+              checkLogin();
+            }
+          },
+          error: function(err) {
+            $('#login-errors').append('<p>' + JSON.stringify(err) + '</p>');
+          }
+        });
+      });
+
+      $('#register-form').on('submit', function(e) {
+        e.preventDefault();
+        $('#register-errors').empty();
+        let policyNum = $('#register-insurance-policy-num').val();
+        let pass = $('#register-insurance-password').val();
+        let conf = $('#register-insurance-password-confirm').val();
+        let lastname = $('#register-insurance-lastname').val();
+        let firstname = $('#register-insurance-firstname').val();
+        let value = $('#register-insurance-value').val();
+        if (policyNum == '' || pass == '' || conf == '' || lastname == '' || firstname == '' || value == '') {
+          $('#register-errors').append('<p>All fields must be completed.</p>');
+          return;
+        }
+        if (pass != conf) {
+          $('#register-errors').append('<p>Passwords do not match.</p>');
+          return;
+        }
+
+        $.ajax({
+          type: "POST",
+          url: '/insurance/register',
+          data: JSON.stringify({
+            'policyNum': policyNum,
+            'password': pass,
+            'lastname': lastname,
+            'firstname': firstname,
+            'value': value,
+          }),
+          contentType: "application/json; charset=utf-8",
+          dataType: "json",
+          success: function(data) {
+            console.log(data);
+            if (data.error) {
+              $('#register-errors').append('<p>' + data.error + '</p>');
+            } else {
+              $('#register-insurance-policy-num').val('');
+              $('#register-insurance-password').val('');
+              $('#register-insurance-password-confirm').val('');
+              $('#register-insurance-lastname').val('');
+              $('#register-insurance-firstname').val('');
+              $('#register-insurance-value').val('');
+              alert('Successfully registered! Login to access the portal.')
+            }
+          },
+          error: function(err) {
+            $('#register-errors').append('<p>' + JSON.stringify(err) + '</p>');
+          }
+        });
+      });
+    });
+  </script>
+</html>

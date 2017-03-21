@@ -1,0 +1,175 @@
+<html>
+  <head>
+    <link rel="stylesheet" type="text/css" href="app.css">
+  </head>
+  <body>
+    <h1>MBR Mortgages</h1>
+
+    <!-- Choose New or Existing Application -->
+    <div id='choice-pane'>
+      <button id='form-btn' style='display: block'>Submit New Application</button>
+      <button id='review-btn' style='display: block'>Review Status of Existing Application</button>
+    </div>
+
+    <!-- Review Existing Applications -->
+    <div id='review-pane' style='display: none'>
+      <h3>Application Status</h3>
+      <p>Enter the ID of an exisiting application in the form below to retrieve the status of your application.</p>
+      <form id="review-application-form">
+        <div class="form-group push">
+          <span class='label'>Application ID:</span>
+          <input type="text" name='review-id' id='review-id'>
+        </div>
+        <input type="submit" value="Retrieve" id="apply-btn">
+      </form>
+      <div id='application-review-div'>
+
+      </div>
+    </div>
+
+    <!-- Create New Applications -->
+    <div id='form-pane' style='display: none'>
+      <h3>Mortage Application Form</h3>
+      <form id="new-mortgage-form">
+        <div class="form-group">
+          <span class='label'>Name:</span>
+          <input type="text" name='applicant-name-last' id='applicant-name-last' placeholder="Surname">
+          <input type="text" name='applicant-name-first' id='applicant-name-first' placeholder="Given Name">
+        </div>
+        <div class="form-group">
+          <span class='label'>Phone:</span>
+          <input type="text" name='applicant-phone' id='applicant-phone'>
+        </div>
+        <div class="form-group">
+          <span class='label'>Address:</span>
+          <input type="text" name='applicant-address' id='applicant-address'>
+        </div>
+        <div class="form-group">
+          <span class='label'>Employer:</span>
+          <input type="text" name='applicant-employer' id='applicant-employer'>
+        </div>
+        <div class="form-group">
+          <span class='label'>Insurance:</span>
+          <input type="text" name='applicant-insurance' id='applicant-insurance'>
+        </div>
+        <input type="submit" value="Apply" id="apply-btn">
+      </form>
+      <div id='errors-box'>
+        <ul id='errors-list'>
+        </ul>
+      </div>
+    </div>
+    <div id='finished-pane' style='display: none'>
+      <h3>Application Received!</h3>
+      <p id='application-number'/>
+      <p>
+        To complete this application we require information from your employer and life insurance company. Using the application number above, proceed to the links below to authorize transfer of the necessary information.
+      </p>
+      <a href="/employer.html">Employer Portal</a>
+      <a href="/insurance.html">Life Insurance Portal</a>
+    </div>
+  </body>
+
+  <script src="https://code.jquery.com/jquery-3.1.1.min.js" integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8=" crossorigin="anonymous"></script>
+  <script>
+    $(document).ready(function() {
+
+      //choice panel
+      $('#form-btn').on('click', function(e) {
+        e.preventDefault();
+        $('#choice-pane').hide();
+        $('#form-pane').show();
+      });
+      $('#review-btn').on('click', function(e) {
+        e.preventDefault();
+        $('#choice-pane').hide();
+        $('#review-pane').show();
+      });
+
+      //review panel
+      $('#review-application-form').on('submit', function(e) {
+        e.preventDefault();
+        var id = $('#review-id').val();
+        if (id == '') {
+          return;
+        }
+        $.ajax({
+          type: "POST",
+          url: '/mortgage/retrieve_application',
+          data: JSON.stringify({
+            '_id': id
+          }),
+          contentType: "application/json; charset=utf-8",
+          dataType: "json",
+          success: function(data) {
+            if (data.error) {
+              alert(data.error);
+            } else {
+              $('#application-review-div').empty();
+              $('#application-review-div').append('<h3>Summary of Application #' + id + '</h3>');
+              for (key in data) {
+                if (key == '_id') {}
+                else if (key == 'employerInfo' || key == 'insuranceInfo') {
+                  $('#application-review-div').append('<div class="info-well-title">' + key + ': </div>');
+                  $('#application-review-div').append('<div class="info-well info-well-' + key + '">');
+                  for (key2 in data[key]) {
+                    $('#application-review-div .info-well-' + key).append('<p><strong>' + key2 + ': </strong>' + data[key][key2] + '</p>');
+                  }
+                  $('#application-review-div').append('</div>');
+                } else {
+                  $('#application-review-div').append('<p><strong>' + key + ': </strong>' + data[key] + '</p>');
+                }
+              }
+            }
+          },
+          error: function(err) {
+            alert(JSON.stringify(err));
+          }
+        });
+      });
+
+      //form panel
+      $('#new-mortgage-form').on('submit', function(e) {
+        e.preventDefault();
+        let errors = [];
+        let vals = {
+          lastname: $('#applicant-name-last').val(),
+          firstname: $('#applicant-name-first').val(),
+          phone: $('#applicant-phone').val(),
+          address: $('#applicant-address').val(),
+          employer: $('#applicant-employer').val(),
+          insurance: $('#applicant-insurance').val()
+        }
+        for (val in vals) {
+          if (vals[val] == '' || vals[val] == undefined) {
+            errors.push(val);
+          }
+        }
+        if (errors.length > 0) {
+          $('#errors-list').empty();
+          for (err in errors) {
+            $('#errors-list').append('<li>' + errors[err] +'</li>')
+          }
+          return;
+        }
+        $.ajax({
+          type: "POST",
+          url: '/mortgage/new_application',
+          data: JSON.stringify(vals),
+          contentType: "application/json; charset=utf-8",
+          dataType: "json",
+          success: function(data) {
+            console.log(data);
+            $('#form-pane').hide();
+            $('#application-number').text('Application #: ' + data._id);
+            $('#finished-pane').show();
+          },
+          error: function(err) {
+            alert(JSON.stringify(err));
+          }
+        });
+      });
+
+    });
+  </script>
+</html>
